@@ -1,0 +1,8 @@
+(library
+ (public_name patchamama.lstd)
+ (wrapped false)
+ (name lstd)
+ (foreign_stubs
+  (language c)
+  (names l_stubs_time))
+ (libraries cmdliner unix))

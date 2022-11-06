@@ -1,0 +1,4 @@
+(executable
+ (public_name js_test)
+ (name js_test)
+ (libraries js stest))

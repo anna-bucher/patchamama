@@ -1,0 +1,21 @@
+(library
+ (name js)
+ (public_name patchamama.js)
+ (synopsis "Bindings to mujs library")
+ (foreign_stubs
+  (language c)
+  (names js_stubs)
+  (flags
+   (:include c_flags.sexp)))
+ (c_library_flags
+  (:include c_library_flags.sexp))
+ ; (install_c_headers lua_stubs)
+ ; (libraries ffmpeg-avutil ffmpeg-avcodec)
+ )
+
+(rule
+ (targets c_flags.sexp c_library_flags.sexp)
+ (deps
+  (:discover config/discover.exe))
+ (action
+  (run %{discover})))

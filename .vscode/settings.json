@@ -1,0 +1,14 @@
+{
+  "files.associations": {
+    "*.json": "jsonc",
+    "c.h": "c",
+    "__locale": "cpp",
+    "js_stubs.h": "c",
+    "unixsupport.h": "c",
+    "threads.h": "c",
+    "memory.h": "c",
+    "alloc.h": "c",
+    "mlvalues.h": "c",
+    "mujs.h": "c"
+  }
+}

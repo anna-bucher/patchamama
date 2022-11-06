@@ -1,0 +1,5 @@
+(library
+ (public_name patchamama.stest)
+ (wrapped false)
+ (name stest)
+ (libraries lstd bos))

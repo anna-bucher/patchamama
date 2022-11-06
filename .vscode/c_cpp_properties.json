@@ -1,0 +1,31 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "/opt/homebrew/lib",
+                "/opt/homebrew/include",
+                "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1",
+                "~/.opam/default/lib/ocaml"
+            ],
+            "browse": {
+                "path": [
+                    "${workspaceFolder}/**",
+                    "/opt/homebrew/lib",
+                    "/opt/homebrew/include",
+                    "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/include/c++/v1",
+                    "~/.opam/default/lib/ocaml"
+                ]
+            },
+            "defines": [
+                "__SIZE_TYPE__=long long unsigned int"
+            ],
+            "macFrameworkPath": [
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang"
+        }
+    ],
+    "version": 4
+}
