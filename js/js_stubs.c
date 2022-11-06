@@ -1,12 +1,6 @@
 #include "js_stubs.h"
 
 #define Js_State_val(v) (*((js_State **)Data_abstract_val (v)))
-#define check_no_error(errc, err)                                              \
-  if ((errc) != NULL) {                                                        \
-    err = caml_copy_string (errc);                                             \
-    free (errc);                                                               \
-    caml_invalid_argument_value (err);                                         \
-  }
 
 // open' : string -> t = "caml_js_open"
 CAMLprim value caml_js_open (value file) {

@@ -1,0 +1,4 @@
+(executable
+ (public_name midi_test)
+ (name midi_test)
+ (libraries midi stest))
