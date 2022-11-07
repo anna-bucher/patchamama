@@ -4,14 +4,27 @@ enum { MMSystem, CoreMidi, ALSA };
 
 const char *interface_name (int interface) {
   switch (interface) {
-  case CoreMidi:
-    return "CoreMIDI";
   case MMSystem:
     return "MMSystem";
+  case CoreMidi:
+    return "CoreMIDI";
   case ALSA:
     return "ALSA";
   default:
     return "";
+  }
+}
+
+int interface_type (value err, const char *interface) {
+  if (strcmp (interface, "MMSystem") == 0)
+    return 0;
+  else if (strcmp (interface, "CoreMIDI") == 0)
+    return 1;
+  else if (strcmp (interface, "ALSA") == 0)
+    return 2;
+  else {
+    err = caml_copy_string ("invalid interface");
+    caml_invalid_argument_value (err);
   }
 }
 
@@ -54,7 +67,7 @@ const char *pm_error_string (PmError pm_error) {
     caml_invalid_argument_value (err);                                         \
   }
 
-// open' : interface -> string -> t = "caml_midi_create_virtual_input"
+// create_virtual_input : interface -> string -> t =
 CAMLprim value caml_midi_create_virtual_input (value interface, value name) {
   CAMLparam1 (name);
   CAMLlocal1 (err);
@@ -68,7 +81,31 @@ CAMLprim value caml_midi_create_virtual_input (value interface, value name) {
   void *device_info = NULL;
 
   caml_release_runtime_system ();
-  PMEXPORT PmError res = Pm_CreateVirtualInput (
+  PmDeviceID res = Pm_CreateVirtualInput (
+      namec, interface_name (Int_val (interface)), device_info);
+  caml_acquire_runtime_system ();
+
+  caml_stat_free (namec);
+  check_no_error (res, err);
+
+  CAMLreturn (Val_int (res));
+}
+
+// create_virtual_intput : interface -> string -> t =
+CAMLprim value caml_midi_create_virtual_output (value interface, value name) {
+  CAMLparam1 (name);
+  CAMLlocal1 (err);
+
+  if (!caml_string_is_c_safe (name))
+    caml_invalid_argument (
+        "midi_create_virtual_output: name string is not C safe.");
+
+  char *namec = caml_stat_strdup (String_val (name));
+  const char *interf = "";
+  void *device_info = NULL;
+
+  caml_release_runtime_system ();
+  PmDeviceID res = Pm_CreateVirtualOutput (
       namec, interface_name (Int_val (interface)), device_info);
   caml_acquire_runtime_system ();
 
@@ -82,7 +119,27 @@ CAMLprim value caml_midi_create_virtual_input (value interface, value name) {
 CAMLprim value caml_midi_delete_virtual_device (value dev) {
   CAMLparam1 (dev);
   CAMLlocal1 (err);
-  PMEXPORT PmError res = Pm_DeleteVirtualDevice (PmDeviceID_val (dev));
+  PmError res = Pm_DeleteVirtualDevice (PmDeviceID_val (dev));
   check_no_error (res, err);
   CAMLreturn (Val_unit);
+}
+
+// get_device_info : int -> device_info = "caml_midi_get_device_info"
+CAMLprim value caml_midi_get_device_info (value dev) {
+  CAMLparam1 (dev);
+  CAMLlocal2 (info, err);
+  const PmDeviceInfo *infoc = Pm_GetDeviceInfo (PmDeviceID_val (dev));
+  if (infoc == NULL) {
+    err = caml_copy_string ("midi_get_device_info: invalid device id");
+    caml_invalid_argument_value (err);
+  }
+  info = caml_alloc (7, 0);
+  Store_field (info, 0, Val_int (infoc->structVersion));
+  Store_field (info, 1, Val_int (interface_type (err, infoc->interf)));
+  Store_field (info, 2, caml_copy_string (infoc->name));
+  Store_field (info, 3, Val_int (infoc->input));
+  Store_field (info, 4, Val_int (infoc->output));
+  Store_field (info, 5, Val_bool (infoc->opened));
+  Store_field (info, 6, Val_bool (infoc->is_virtual));
+  CAMLreturn (info);
 }
