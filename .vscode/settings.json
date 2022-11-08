@@ -11,6 +11,9 @@
     "mlvalues.h": "c",
     "mujs.h": "c",
     "rtmidi.h": "c",
-    "cstring": "cpp"
+    "cstring": "cpp",
+    "misc.h": "c",
+    "compatibility.h": "c",
+    "rtmidi_c.h": "c"
   }
 }

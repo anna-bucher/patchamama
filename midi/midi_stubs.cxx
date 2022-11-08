@@ -5,6 +5,11 @@
 // #include <rtmidi/RtMidi.h>
 
 #define CAML_NAME_SPACE
+#ifdef __cplusplus
+#define STUB extern "C"
+#else
+#define STUB
+#endif
 
 #include <caml/alloc.h>
 #include <caml/fail.h>
@@ -13,36 +18,66 @@
 #include <caml/threads.h>
 #include <caml/unixsupport.h>
 
-#include <portmidi.h>
+#include <RtMidi.h>
 
-enum { MMSystem, CoreMidi, ALSA };
+#define RtMidiIn_val(v) (*((RtMidiIn **)Data_abstract_val (v)))
 
-const char *interface_name (int interface) {
-  switch (interface) {
-  case MMSystem:
-    return "MMSystem";
-  case CoreMidi:
-    return "CoreMIDI";
-  case ALSA:
-    return "ALSA";
-  default:
-    return "";
-  }
-}
+STUB value caml_midiin_new (value unit) {
+  CAMLparam1 (unit);
+  CAMLlocal2 (err, midiin);
+  try {
+    RtMidiIn *midiinc = new RtMidiIn ();
 
-int interface_type (value err, const char *interface) {
-  if (strcmp (interface, "MMSystem") == 0)
-    return 0;
-  else if (strcmp (interface, "CoreMIDI") == 0)
-    return 1;
-  else if (strcmp (interface, "ALSA") == 0)
-    return 2;
-  else {
-    err = caml_copy_string ("invalid interface");
+    midiin = caml_alloc (1, Abstract_tag);
+    RtMidiIn_val (midiin) = midiinc;
+    CAMLreturn (midiin);
+  } catch (RtMidiError &error) {
+    err = caml_copy_string ((error.getMessage ().c_str ()));
     caml_invalid_argument_value (err);
   }
 }
 
+STUB value caml_midiin_destroy (value midiin) {
+  CAMLparam1 (midiin);
+  CAMLlocal1 (err);
+  try {
+    RtMidiIn *midiinc = RtMidiIn_val (midiin);
+
+    delete midiinc;
+    CAMLreturn (Val_unit);
+  } catch (RtMidiError &error) {
+    err = caml_copy_string ((error.getMessage ().c_str ()));
+    caml_invalid_argument_value (err);
+  }
+}
+
+STUB value caml_midiin_getPortCount (value unit) {
+  CAMLparam1 (unit);
+  CAMLlocal1 (err);
+  try {
+    RtMidiIn m;
+    CAMLreturn (Val_int (m.getPortCount ()));
+  } catch (RtMidiError &error) {
+    err = caml_copy_string ((error.getMessage ().c_str ()));
+    caml_invalid_argument_value (err);
+  }
+}
+
+STUB value caml_midiin_getPortName (value id) {
+  CAMLparam1 (id);
+  CAMLlocal2 (err, name);
+  try {
+    RtMidiIn m;
+    std::string namec = m.getPortName (Int_val (id));
+    name = caml_copy_string (namec.c_str ());
+    CAMLreturn (name);
+  } catch (RtMidiError &error) {
+    err = caml_copy_string ((error.getMessage ().c_str ()));
+    caml_invalid_argument_value (err);
+  }
+}
+
+/*
 #define PortMidiStream_val(v) (*((PortMidiStream **)Data_abstract_val (v)))
 #define PmDeviceID_val(v) ((PmDeviceID)Int_val (v))
 #define check_no_error(errc, err)                                              \
@@ -52,7 +87,7 @@ int interface_type (value err, const char *interface) {
   }
 
 // initialize : unit -> unit =
-CAMLprim value caml_midi_initialize (value unit) {
+STUBexport value caml_midi_initialize (value unit) {
   CAMLparam1 (unit);
   CAMLlocal1 (err);
 
@@ -63,7 +98,7 @@ CAMLprim value caml_midi_initialize (value unit) {
 }
 
 // terminate : unit -> unit =
-CAMLprim value caml_midi_terminate (value unit) {
+STUBexport value caml_midi_terminate (value unit) {
   CAMLparam1 (unit);
   CAMLlocal1 (err);
 
@@ -74,7 +109,7 @@ CAMLprim value caml_midi_terminate (value unit) {
 }
 
 // create_virtual_input : interface -> string -> t =
-CAMLprim value caml_midi_create_virtual_input (value interface, value name) {
+STUBexport value caml_midi_create_virtual_input (value interface, value name) {
   CAMLparam1 (name);
   CAMLlocal1 (err);
 
@@ -98,7 +133,7 @@ CAMLprim value caml_midi_create_virtual_input (value interface, value name) {
 }
 
 // create_virtual_intput : interface -> string -> t =
-CAMLprim value caml_midi_create_virtual_output (value interface, value name) {
+STUBexport value caml_midi_create_virtual_output (value interface, value name) {
   CAMLparam1 (name);
   CAMLlocal1 (err);
 
@@ -122,7 +157,7 @@ CAMLprim value caml_midi_create_virtual_output (value interface, value name) {
 }
 
 // delete_virtual_device : t -> unit = "caml_midi_delete_virtual_device"
-CAMLprim value caml_midi_delete_virtual_device (value dev) {
+STUBexport value caml_midi_delete_virtual_device (value dev) {
   CAMLparam1 (dev);
   CAMLlocal1 (err);
   PmError errc = Pm_DeleteVirtualDevice (PmDeviceID_val (dev));
@@ -131,7 +166,7 @@ CAMLprim value caml_midi_delete_virtual_device (value dev) {
 }
 
 // get_device_info : int -> device_info = "caml_midi_get_device_info"
-CAMLprim value caml_midi_get_device_info (value dev) {
+STUBexport value caml_midi_get_device_info (value dev) {
   CAMLparam1 (dev);
   CAMLlocal2 (info, err);
   const PmDeviceInfo *infoc = Pm_GetDeviceInfo (PmDeviceID_val (dev));
@@ -152,13 +187,13 @@ CAMLprim value caml_midi_get_device_info (value dev) {
 }
 
 // count_devices : unit -> int = "caml_midi_count_devices"
-CAMLprim value caml_midi_count_devices (value unit) {
+STUBexport value caml_midi_count_devices (value unit) {
   CAMLparam1 (unit);
   CAMLreturn (Val_int (Pm_CountDevices ()));
 }
 
 // open_input : int -> int -> stream = "caml_midi_open_input"
-CAMLprim value caml_midi_open_input (value dev, value buf_size) {
+STUBexport value caml_midi_open_input (value dev, value buf_size) {
   CAMLparam2 (dev, buf_size);
   CAMLlocal2 (err, stream);
   PortMidiStream *streamc = NULL;
@@ -171,8 +206,8 @@ CAMLprim value caml_midi_open_input (value dev, value buf_size) {
 }
 
 // open_output : int -> int -> int -> stream = "caml_midi_open_output"
-CAMLprim value caml_midi_open_output (value dev, value buf_size,
-                                      value latency) {
+STUBexport value caml_midi_open_output (value dev, value buf_size,
+                                        value latency) {
   CAMLparam3 (dev, buf_size, latency);
   CAMLlocal2 (err, stream);
   PortMidiStream *streamc = NULL;
@@ -186,7 +221,7 @@ CAMLprim value caml_midi_open_output (value dev, value buf_size,
 }
 
 // close_input : int -> int -> int = "caml_midi_close_input"
-CAMLprim value caml_midi_close (value stream) {
+STUBexport value caml_midi_close (value stream) {
   CAMLparam1 (stream);
   CAMLlocal1 (err);
   PmError errc = Pm_Close (PortMidiStream_val (stream));
@@ -194,7 +229,7 @@ CAMLprim value caml_midi_close (value stream) {
   CAMLreturn (Val_unit);
 }
 
-CAMLprim value caml_midi_read (value stream) {
+STUBexport value caml_midi_read (value stream) {
   CAMLparam1 (stream);
   CAMLlocal1 (err);
   PmEvent buffer[1];
@@ -202,3 +237,4 @@ CAMLprim value caml_midi_read (value stream) {
   int countc = Pm_Read (PortMidiStream_val (stream), buffer, 1);
   CAMLreturn (Val_int (countc));
 }
+*/

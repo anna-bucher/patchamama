@@ -1,35 +1,25 @@
-type m
-type interface = MMSystem | CoreMIDI | ALSA
-val interface_to_string : interface -> string
-val open' : (m -> unit) -> unit
+module Event : sig
+  type ev = { c : int; n : int; v : int; }
+  type t = NoteOn of ev | NoteOff of ev | Ctrl of ev | Raw of bytes
 
-module Input_device : sig
-  type info
-  type t
-  val list : m -> info list
-  val find_device : m -> string -> info option
-
-  val info : t -> info
-  val interface : info -> interface
-  val name : info -> string
-
-  val create : m -> ?buf_size:int -> interface -> string -> (t -> unit) -> unit
-  val open' : m -> ?buf_size:int -> info -> (t -> unit) -> unit
-
-  val read : t -> int
+  val to_bytes : t -> bytes
+  val of_bytes : bytes -> t
 end
 
-module Output_device : sig
-  type info
+module Input : sig
   type t
-  val list : m -> info list
-  val find_device : m -> string -> info option
+  type port
+  val port_list : unit -> port list
+  val find_port : string -> port option
+  val name : port -> string
 
-  val info : t -> info
-  val interface : info -> interface
-  val name : info -> string
+(*   val create : string -> (Event.t -> unit) -> unit *)
+  val listen : (Event.t -> unit) -> port -> unit
+end
 
-  val create : m -> ?buf_size:int -> ?latency:int -> interface -> string -> (t -> unit) -> unit
-  val open' : m -> ?buf_size:int -> ?latency:int -> info -> (t -> unit) -> unit
-
+module Output : sig
+  type t
+  type port
+  val port_list : unit -> port list
+  val find_port : string -> port option
 end

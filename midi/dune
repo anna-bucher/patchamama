@@ -3,11 +3,13 @@
  (public_name patchamama.midi)
  (synopsis "Bindings and types for raw midi handling")
  (foreign_stubs
-  (language c)
+  (language cxx)
   (names midi_stubs)
   (flags
+   -std=c++11
    (:include c_flags.sexp)))
  (c_library_flags
+  -lc++
   (:include c_library_flags.sexp))
  ; (install_c_headers lua_stubs)
  ; (libraries ffmpeg-avutil ffmpeg-avcodec)
