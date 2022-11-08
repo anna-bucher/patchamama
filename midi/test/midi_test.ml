@@ -60,8 +60,15 @@ module Input_test = struct
         aux acc t in
     Printf.printf "[%s] " (aux "" (M.port_list ()))
 
+  let listen () =
+    match M.find_port in_port with
+    | None -> ()
+    | Some p -> M.listen p @@ fun ev ->
+      Printf.printf "Received %s\n" (Event_test.as_string ev); flush_all ()
+
   let test () = run "Midi Input" [
       ("port list", list);
+      ("listen", listen);
     ];
     Gc.full_major () (* crash test *)
 end

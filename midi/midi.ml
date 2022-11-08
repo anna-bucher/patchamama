@@ -36,16 +36,20 @@ end
 
 
 module T = struct
-  type midiin (* boxed RtMidiIn *)
-  (*   type event = bytes *)
+  type midiin (* boxed MyInput class *)
+  type event = bytes
   (* type midiout *)
 
-  external midiin_new : unit -> midiin = "caml_midiin_new"
-  external midiin_destroy : midiin -> unit = "caml_midiin_destroy"
+  external midiin_open : int -> midiin = "caml_midiin_open"
+  (* Setup of callback. *)
+
+  external midiin_close : midiin -> unit = "caml_midiin_close"
+
+  external midiin_read : midiin -> event = "caml_midiin_read"
+  (* Blocking read*)
 
   external midiin_getPortCount : unit -> int = "caml_midiin_getPortCount"
   external midiin_getPortName : int -> string = "caml_midiin_getPortName"
-  (*   external midiin_listen : (event -> unit) -> int -> unit = "caml_midiin_listen" *)
 end
 
 module Input = struct
@@ -68,13 +72,15 @@ module Input = struct
 
   let name port = port.name
 
-  let listen _fn _port = 
-    let m = T.midiin_new () in
-    let finally () = T.midiin_destroy m in
+  let listen port fn = 
+    let m = T.midiin_open port.id in
+    let finally () = T.midiin_close m in
     Fun.protect ~finally (fun () -> 
-        (*         let clbk b = fn (Event.of_bytes b) in
-                   T.midiin_listen clbk port.id *)
-        ()
+        let rec loop () =
+          let b = T.midiin_read m in
+          fn (Event.of_bytes b);
+          loop () in
+        loop ()
       )
 end
 

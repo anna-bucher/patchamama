@@ -14,7 +14,7 @@ module Input : sig
   val name : port -> string
 
 (*   val create : string -> (Event.t -> unit) -> unit *)
-  val listen : (Event.t -> unit) -> port -> unit
+  val listen : port -> (Event.t -> unit) -> unit
 end
 
 module Output : sig
