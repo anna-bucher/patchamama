@@ -9,6 +9,8 @@
     "memory.h": "c",
     "alloc.h": "c",
     "mlvalues.h": "c",
-    "mujs.h": "c"
+    "mujs.h": "c",
+    "rtmidi.h": "c",
+    "cstring": "cpp"
   }
 }

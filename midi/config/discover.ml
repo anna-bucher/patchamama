@@ -1,5 +1,6 @@
 module C = Configurator.V1
 
+(* let packages = [("rtmidi", "5.0.0")] *)
 let packages = [("portmidi", "2.0.3")]
 
 let () =
