@@ -1,104 +1,32 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include "midi_stubs.h"
 
-// #include <rtmidi/RtMidi.h>
+#define RtMidiOut_val(v) (*((RtMidiOut **)Data_abstract_val (v)))
 
-#define CAML_NAME_SPACE
-#ifdef __cplusplus
-#define STUB extern "C"
-#else
-#define STUB
-#endif
-
-#include <caml/alloc.h>
-#include <caml/fail.h>
-#include <caml/memory.h>
-#include <caml/mlvalues.h>
-#include <caml/threads.h>
-#include <caml/unixsupport.h>
-
-#include <RtMidi.h>
-
-typedef std::vector<unsigned char> Message;
-typedef std::mutex Mutex;
-typedef std::unique_lock<Mutex> Lock;
-typedef std::condition_variable Condition;
-
-class MyInput {
-  Mutex mut;
-  Message message;
-  Condition has_data;
-  RtMidiIn midi;
-  static void read_callback (double deltatime, Message *message,
-                             void *userData) {
-    MyInput *m = (MyInput *)userData;
-    m->write (*message);
-  }
-
-public:
-  MyInput (int n) {
-    midi.openPort (n);
-    midi.setCallback (&read_callback, (void *)this);
-  }
-
-  // Blocking read until a message is posted.
-  Message read () {
-    Lock l (mut);
-    has_data.wait (l);
-    return message;
-  }
-
-  // Write message and unlock read thread.
-  void write (const Message &m) {
-    Lock l (mut);
-    message = m;
-    has_data.notify_one ();
-  }
-};
-
-#define MyInput_val(v) (*((MyInput **)Data_abstract_val (v)))
-
-STUB value caml_midiin_open (value port) {
+STUB value caml_midiout_open (value port) {
   CAMLparam1 (port);
-  CAMLlocal2 (err, midiin);
+  CAMLlocal2 (err, midiout);
   try {
-    MyInput *m = new MyInput (Int_val (port));
-    midiin = caml_alloc (1, Abstract_tag);
-    MyInput_val (midiin) = m;
-    CAMLreturn (midiin);
+    RtMidiOut *m = new RtMidiOut ();
+    m->openPort (Int_val (port));
+    midiout = caml_alloc (1, Abstract_tag);
+    RtMidiOut_val (midiout) = m;
+    CAMLreturn (midiout);
   } catch (RtMidiError &error) {
     err = caml_copy_string ((error.getMessage ().c_str ()));
     caml_invalid_argument_value (err);
   }
 }
 
-STUB value caml_midiin_read (value midiin) {
-  CAMLparam1 (midiin);
-  CAMLlocal2 (err, bytes);
-  try {
-    MyInput *midiinc = MyInput_val (midiin);
-
-    Message m = midiinc->read ();
-    bytes = caml_alloc_string (m.size ());
-    unsigned char *b = Bytes_val (bytes);
-    for (int i = 0; i < m.size (); ++i)
-      b[i] = m[i];
-
-    CAMLreturn (bytes);
-  } catch (RtMidiError &error) {
-    err = caml_copy_string ((error.getMessage ().c_str ()));
-    caml_invalid_argument_value (err);
-  }
-}
-
-STUB value caml_midiin_close (value midiin) {
-  CAMLparam1 (midiin);
+STUB value caml_midiout_sendMessage (value midiout, value bytes) {
+  CAMLparam2 (midiout, bytes);
   CAMLlocal1 (err);
   try {
-    MyInput *midiinc = MyInput_val (midiin);
+    RtMidiOut *midioutc = RtMidiOut_val (midiout);
 
-    delete midiinc;
+    unsigned char *b = Bytes_val (bytes);
+    size_t len = caml_string_length (bytes);
+    Message m = Message (b, b + len);
+    midioutc->sendMessage (&m);
     CAMLreturn (Val_unit);
   } catch (RtMidiError &error) {
     err = caml_copy_string ((error.getMessage ().c_str ()));
@@ -106,11 +34,25 @@ STUB value caml_midiin_close (value midiin) {
   }
 }
 
-STUB value caml_midiin_getPortCount (value unit) {
+STUB value caml_midiout_close (value midiout) {
+  CAMLparam1 (midiout);
+  CAMLlocal1 (err);
+  try {
+    RtMidiOut *midioutc = RtMidiOut_val (midiout);
+
+    delete midioutc;
+    CAMLreturn (Val_unit);
+  } catch (RtMidiError &error) {
+    err = caml_copy_string ((error.getMessage ().c_str ()));
+    caml_invalid_argument_value (err);
+  }
+}
+
+STUB value caml_midiout_getPortCount (value unit) {
   CAMLparam1 (unit);
   CAMLlocal1 (err);
   try {
-    RtMidiIn m;
+    RtMidiOut m;
     CAMLreturn (Val_int (m.getPortCount ()));
   } catch (RtMidiError &error) {
     err = caml_copy_string ((error.getMessage ().c_str ()));
@@ -118,11 +60,11 @@ STUB value caml_midiin_getPortCount (value unit) {
   }
 }
 
-STUB value caml_midiin_getPortName (value id) {
+STUB value caml_midiout_getPortName (value id) {
   CAMLparam1 (id);
   CAMLlocal2 (err, name);
   try {
-    RtMidiIn m;
+    RtMidiOut m;
     std::string namec = m.getPortName (Int_val (id));
     name = caml_copy_string (namec.c_str ());
     CAMLreturn (name);

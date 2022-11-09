@@ -16,6 +16,7 @@
     "compatibility.h": "c",
     "rtmidi_c.h": "c",
     "__mutex_base": "cpp",
-    "atomic": "cpp"
+    "atomic": "cpp",
+    "vector": "cpp"
   }
 }

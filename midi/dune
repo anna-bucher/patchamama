@@ -4,7 +4,7 @@
  (synopsis "Bindings and types for raw midi handling")
  (foreign_stubs
   (language cxx)
-  (names midi_stubs)
+  (names midiin_stubs midiout_stubs)
   (flags
    -std=c++11
    (:include c_flags.sexp)))
