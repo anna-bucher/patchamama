@@ -17,6 +17,12 @@
     "rtmidi_c.h": "c",
     "__mutex_base": "cpp",
     "atomic": "cpp",
-    "vector": "cpp"
+    "vector": "cpp",
+    "win32_utf8.c": "cpp",
+    "iostream": "cpp",
+    "cstdlib": "cpp",
+    "cstdio": "cpp",
+    "iomanip": "cpp",
+    "iosfwd": "cpp"
   }
 }

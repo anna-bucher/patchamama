@@ -1,0 +1,4 @@
+(executable
+ (public_name reaper_test)
+ (name reaper_test)
+ (libraries reaper stest))

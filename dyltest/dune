@@ -1,0 +1,18 @@
+; dynamic library
+
+(executable
+ (name dyl_ext)
+ (modules dyl_ext)
+ (modes shared_object)
+ (foreign_stubs
+  (language c)
+  (flags -shared)
+  (names dyl_ext)))
+
+(library
+ (name dyl_loader)
+ (libraries reaper)
+ (modules dyl_loader)
+ (foreign_stubs
+  (language c)
+  (names dyl_loader_stubs)))

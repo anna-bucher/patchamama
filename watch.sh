@@ -38,6 +38,8 @@ fswatch --batch-marker="${FILE_CHANGE_BATCH_MARKER}" -0 . -e _build -e "-dump.js
 
   # run block if file change batch marker is output
   if [ "$file_path" = "$FILE_CHANGE_BATCH_MARKER" ]; then
+    # bug in ocamllsp: needs to be killed too
+    killall -CONT ocamllsp
     stop_app && start_app
   fi
 done

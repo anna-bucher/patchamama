@@ -1,6 +1,7 @@
 type t = string * (unit -> unit)
 exception Fail_test
 
+
 let color c s = 
   let color = match c with
     | `Group -> 206
@@ -14,15 +15,39 @@ let color c s =
   in
   Printf.sprintf "\u{001b}[38;5;%im%s\u{001b}[0m" color s
 
-let fail_loc () = match Printexc.backtrace_slots (Printexc.get_callstack 10) with
-  | None -> "No backtrace. Did you compile with -g ?"
-  | Some slots ->
+let exn_message e =
+  let re = Str.regexp {|^[^"]*"\([^"]+\)".*$|} in
+  Str.replace_first re {|\1|} (Printexc.to_string e)
+(* let parse_trace () =
+   match Printexc.backtrace_slots (Printexc.get_callstack 10) with
+   | None -> "No backtrace. Did you compile with -g ?"
+   | Some slots ->
     let rec aux = function
       | [] -> "Backtrace not found."
       | t :: ts -> match Printexc.Slot.location t with
         | None -> aux ts
-        | Some l when l.Printexc.filename = "core/nandi/nandi_test.ml" -> aux ts
+        | Some l when l.Printexc.filename = "core/stest/stest.ml" -> aux ts
         | Some l -> Printf.sprintf "%s:%d" l.filename l.line_number
+    in
+    aux (Array.to_list slots)
+*)
+
+let backtrace slots = 
+  match slots with
+  | None -> raise (Invalid_argument "No backtrace. Did you compile with -g ?")
+  | Some slots ->
+    let rec aux = function
+      | [] -> ()
+      | t :: ts -> match Printexc.Slot.location t with
+        | None -> aux ts
+        (*         | Some l when l.Printexc.filename = "core/stest/stest.ml" -> aux ts *)
+        | Some l -> 
+          let name = match Printexc.Slot.name t with
+            | None -> ""
+            | Some s -> Printf.sprintf "%40s" s in
+          let p = Printf.sprintf "%s:%d" l.filename l.line_number in
+          Printf.printf "   %s %s\n" (color `Grey name) (color `Info p);
+          aux ts
     in
     aux (Array.to_list slots)
 
@@ -35,14 +60,20 @@ let skip_test () =
   flush_all ()
 let fail msg = 
   Printf.printf "%s\n" (color `Fail "FAIL");
-  Printf.printf "      %s\n" msg;
-  Printf.printf "      %s\n" (color `Fail (fail_loc ()));
+  Printf.printf "           %s\n" msg;
+  flush_all ();
+  raise Fail_test
+let exn e = 
+  let slots = Printexc.backtrace_slots (Printexc.get_raw_backtrace ()) in
+  Printf.printf "%s\n" (color `Fail "EXN");
+  Printf.printf "           %s\n" (color `Fail (exn_message e));
+  backtrace slots;
   flush_all ();
   raise Fail_test
 
 let run title ?(skip=[]) ?(group='-') tests = 
   Printexc.record_backtrace true;
-  Printf.printf "%s\n" (color `Group title);
+  Printf.printf "\n%s\n" (color `Group title);
   let rec aux grp = function
     | [] -> ()
     | (test, cb) :: t ->
@@ -56,10 +87,11 @@ let run title ?(skip=[]) ?(group='-') tests =
       let () = match List.find_opt (fun k -> test = k) skip with
         | Some _ -> skip_test ()
         | None -> 
-          begin try
-              cb (); pass () 
-            with Fail_test -> ()
-          end
+          try
+            cb (); pass () 
+          with 
+          | Fail_test -> ()
+          | e -> exn e
       in
       aux new_grp t
   in
@@ -70,7 +102,7 @@ let run title ?(skip=[]) ?(group='-') tests =
 module Utils : sig
   val read_file : string -> bytes option
   val write_file : string -> bytes -> unit
-  val with_tmp_dir : (string -> 'a) -> 'a
+  val with_tmp_dir : (string -> 'a) -> unit
 end = struct
   let read_file path = 
     match Sys.file_exists path with
@@ -92,7 +124,10 @@ end = struct
     ignore @@ close_out f
   let with_tmp_dir fn =
     let r = Bos.OS.Dir.with_tmp "%s" begin fun path f ->
-        f (Fpath.to_string path)
+        try ignore @@ f (Fpath.to_string path)
+        with 
+        | Fail_test -> raise Fail_test
+        | e -> exn e
       end fn
     in match r with
     | Ok r -> r
@@ -103,7 +138,8 @@ end
 module Assert : sig
   val true_or : string -> bool -> unit
   val equal_or : ('a -> 'a -> string, unit, string) format -> 'a -> 'a -> unit
-  val throws : string -> string -> (unit -> 'b) -> unit
+  val throws : string -> (unit -> 'b) -> unit
+  val pass : (unit -> 'a) -> unit
   val fail : string -> 'b
   val failf : ('a -> string, unit, string) format -> 'a -> 'b
   val snapshot : string -> string -> string -> string -> unit
@@ -112,11 +148,16 @@ end = struct
   let equal_or msg exp act = if exp = act then () else fail (color `Fail (Printf.sprintf msg exp act))
   let fail msg = fail (color `Fail msg)
   let failf msg act = fail (color `Fail (Printf.sprintf msg act))
-  let throws exp title fn =
+  let pass fn =
+    try ignore @@ fn ()
+    with 
+    | Fail_test -> ()
+    | e -> exn e
+  let throws exp fn =
     let actual = try 
         ignore @@ fn (); "Pass"
       with Invalid_argument s -> s in
-    if actual = exp then () else fail (color `Fail (Printf.sprintf "%s should throw '%s' but returned '%s'" title exp actual))
+    if actual = exp then () else fail (color `Fail (Printf.sprintf "should throw '%s' but returned '%s'" exp actual))
   let snapshot base_path ext title result = 
     let b = String.to_bytes result in
     let spath = base_path ^ "/" ^ title ^ "." ^ ext in
@@ -127,7 +168,7 @@ end = struct
       if Bytes.compare b r != 0 then
         let npath = base_path ^ "/" ^ title ^ "-new." ^ ext in
         Utils.write_file npath b;
-        fail (Printf.sprintf "%s %s\n%s %s\n" 
+        fail (Printf.sprintf "%s %s\n     %s %s\n" 
                 (color `Grey "Snapshot")
                 (color `Info npath)
                 (color `Grey "does not match")

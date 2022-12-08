@@ -2,7 +2,6 @@ open Stest
 open Midi
 
 let snapshots_path = "midi/test/snapshots"
-let scripts_path = "midi/test/scripts"
 
 let snapshot = Assert.snapshot snapshots_path "yml"
 

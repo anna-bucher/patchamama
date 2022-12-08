@@ -1,0 +1,16 @@
+(library
+ (name reaper)
+ (public_name patchamama.reaper)
+ (synopsis "Bindings to build reaper plugins")
+ (modules reaper)
+ (foreign_stubs
+  (language cxx)
+  (names reaper_stubs register)
+  (flags -std=c++11))
+ (c_library_flags -lc++))
+
+(executable
+ (name patchar)
+ (libraries reaper)
+ (modules patchar)
+ (modes shared_object))

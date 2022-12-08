@@ -1,0 +1,4 @@
+(executable
+ (public_name dyl_test)
+ (name dyl_test)
+ (libraries dyl_loader stest))
